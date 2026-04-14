@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <title>Shayari Hub AI | Ultimate Poetry Generator</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- HTML to Image -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Devanagari:wght@400;700&family=Noto+Nastaliq+Urdu:wght@400;700&family=Noto+Serif+Bengali:wght@400;700&family=Noto+Sans+Arabic:wght@400;700&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Poppins', sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        /* Font Classes */
+        .font-hindi { font-family: 'Noto Serif Devanagari', serif; }
+        .font-urdu { font-family: 'Noto Nastaliq Urdu', serif; line-height: 2.4; direction: rtl; }
+        .font-arabic { font-family: 'Noto Sans Arabic', sans-serif; direction: rtl; }
+        .font-default { font-family: 'Poppins', sans-serif; }
+
+        .gradient-text {
+            background: linear-gradient(to right, #4f46e5, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Bottom Nav Animation */
+        .nav-item.active { color: #4f46e5; }
+        .nav-item.active svg { fill: rgba(79, 70, 229, 0.1); transform: scale(1.1); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased selection:bg-indigo-100 selection:text-indigo-900">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- DATA ---
+        const LANGUAGES = [
+            "Hinglish", "English", "Hindi", "Urdu", 
+            "Mandarin Chinese", "Spanish", "French", "Arabic", 
+            "Bengali", "Portuguese", "Russian", "Indonesian", 
+            "German", "Japanese", "Swahili", "Marathi", 
+            "Telugu", "Turkish", "Tamil", "Korean", "Vietnamese"
+        ];
+
+        const CATEGORIES = ["Love", "Sad", "Attitude", "Friendship", "Motivational", "Funny", "Romantic", "Breakup", "Life", "Devotional"];
+
+        // --- COMPONENTS ---
+
+        // 1. Shayari Card Component
+        const ShayariCard = ({ text, language, isFavorite, onToggleFavorite }) => {
+            const cardRef = useRef(null);
+            const [downloading, setDownloading] = useState(false);
+
+            const getTextStyle = () => {
+                const lang = language.toLowerCase();
+                if (['hindi', 'marathi'].includes(lang)) return 'font-hindi';
+                if (['urdu', 'arabic'].includes(lang)) return 'font-urdu text-right pr-4';
+                return 'font-default';
+            };
+
+            const downloadImage = async () => {
+                setDownloading(true);
+                try {
+                    const dataUrl = await htmlToImage.toPng(cardRef.current, { quality: 1.0, backgroundColor: 'white', pixelRatio: 2 });
+                    const link = document.createElement('a');
+                    link.download = `shayari-${Date.now()}.png`;
+                    link.href = dataUrl;
+                    link.click();
+                } catch (err) { console.error(err); }
+                setDownloading(false);
+            };
+
+            const share = () => window.open(`https://wa.me/?text=${encodeURIComponent(text + "\n\n- Created by Shayari Hub AI")}`, '_blank');
+            const copy = () => { navigator.clipboard.writeText(text); alert("Copied!"); };
+
+            return (
+                <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden mb-6 relative group">
+                    {/* Favorite Button (Absolute Top Right) */}
+                    <button 
+                        onClick={() => onToggleFavorite(text)}
+                        className="absolute top-3 right-3 z-10 p-2 bg-white/80 backdrop-blur rounded-full shadow-sm hover:bg-white transition"
+                    >
+                        <i data-lucide="heart" className={`h-5 w-5 transition ${isFavorite ? 'fill-red-500 text-red-500' : 'text-slate-400'}`}></i>
+                    </button>
+
+                    <div ref={cardRef} className="p-6 min-h-[200px] flex items-center justify-center bg-gradient-to-br from-indigo-50 to-pink-50 relative">
+                        <div className="absolute bottom-2 right-4 text-[10px] text-slate-400 opacity-60">SHAYARIHUB.AI</div>
+                        <p className={`${getTextStyle()} text-center text-lg text-slate-800 font-medium whitespace-pre-line leading-loose w-full`}>{text}</p>
+                    </div>
+
+                    <div className="bg-white p-3 border-t border-slate-100 flex justify-between items-center">
+                        <button onClick={copy} className="p-2 text-slate-500 hover:text-indigo-600"><i data-lucide="copy" className="h-5 w-5"></i></button>
+                        <div className="flex gap-2">
+                            <button onClick={downloadImage} className="px-4 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-full flex items-center gap-1">
+                                <i data-lucide="download" className="h-3 w-3"></i> {downloading ? '...' : 'Save'}
+                            </button>
+                            <button onClick={share} className="p-2 text-slate-500 hover:text-green-600"><i data-lucide="share-2" className="h-5 w-5"></i></button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 2. Main App Component
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('home'); // home, history, favorites
+            const [formData, setFormData] = useState({ language: 'Hinglish', category: 'Love', keyword: '' });
+            const [currentResults, setCurrentResults] = useState([]);
+            const [history, setHistory] = useState([]);
+            const [favorites, setFavorites] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [apiKey, setApiKey] = useState('');
+            const [showSettings, setShowSettings] = useState(false);
+
+            // Load Data
+            useEffect(() => {
+                const savedHist = localStorage.getItem('shayariHistory');
+                const savedFavs = localStorage.getItem('shayariFavorites');
+                const savedKey = localStorage.getItem('geminiKey');
+                
+                if (savedHist) setHistory(JSON.parse(savedHist));
+                if (savedFavs) setFavorites(JSON.parse(savedFavs));
+                if (savedKey) setApiKey(savedKey);
+                
+                lucide.createIcons();
+            }, []);
+
+            // Refresh Icons on update
+            useEffect(() => { setTimeout(() => lucide.createIcons(), 50); }, [activeTab, currentResults, favorites, showSettings]);
+
+            const toggleFavorite = (text) => {
+                let newFavs;
+                if (favorites.includes(text)) {
+                    newFavs = favorites.filter(t => t !== text);
+                } else {
+                    newFavs = [text, ...favorites];
+                }
+                setFavorites(newFavs);
+                localStorage.setItem('shayariFavorites', JSON.stringify(newFavs));
+            };
+
+            const generate = async () => {
+                if (!apiKey) { setShowSettings(true); return; }
+                setLoading(true);
+                setCurrentResults([]);
+
+                const prompt = `Generate 4 distinct, emotional Shayari.
+                Language: ${formData.language} (If Hinglish, use Roman Script).
+                Category: ${formData.category}. Topic: ${formData.keyword || formData.category}.
+                Format: JSON Array of strings. 4 lines each. No markdown.`;
+
+                try {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    const data = await res.json();
+                    if(data.error) throw new Error(data.error.message);
+                    
+                    const text = data.candidates[0].content.parts[0].text.replace(/```json|```/g, '').trim();
+                    const newShayaris = JSON.parse(text);
+                    
+                    setCurrentResults(newShayaris);
+                    const updatedHistory = [...newShayaris, ...history].slice(0, 50); // Store last 50
+                    setHistory(updatedHistory);
+                    localStorage.setItem('shayariHistory', JSON.stringify(updatedHistory));
+                } catch (e) { alert(e.message); } 
+                finally { setLoading(false); }
+            };
+
+            // --- VIEWS ---
+
+            const renderHome = () => (
+                <div className="pb-24">
+                    {/* Header */}
+                    <div className="bg-white p-6 pb-8 rounded-b-[2rem] shadow-sm mb-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <span className="text-xl font-bold tracking-tight">Shayari <span className="text-indigo-600">Hub AI</span></span>
+                            <button onClick={() => setShowSettings(true)} className="p-2 bg-slate-100 rounded-full"><i data-lucide="settings" className="h-5 w-5 text-slate-600"></i></button>
+                        </div>
+
+                        <h1 className="text-3xl font-extrabold text-slate-900 mb-2">Create Magic ✨</h1>
+                        <p className="text-slate-500 mb-6 text-sm">AI-powered poetry in 20+ languages.</p>
+
+                        <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                                <select className="p-3 rounded-xl bg-slate-50 border border-slate-200 font-medium text-sm outline-none focus:border-indigo-500"
+                                    value={formData.language} onChange={e => setFormData({...formData, language: e.target.value})}>
+                                    {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
+                                </select>
+                                <select className="p-3 rounded-xl bg-slate-50 border border-slate-200 font-medium text-sm outline-none focus:border-indigo-500"
+                                    value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
+                                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                            </div>
+                            <input type="text" placeholder="Topic (Optional, e.g. Rain)" className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-sm outline-none focus:border-indigo-500"
+                                value={formData.keyword} onChange={e => setFormData({...formData, keyword: e.target.value})} />
+                            
+                            <button onClick={generate} disabled={loading} className="w-full bg-indigo-600 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-indigo-200 active:scale-95 transition flex justify-center items-center gap-2">
+                                {loading ? <i data-lucide="loader-2" className="animate-spin h-5 w-5"></i> : <><i data-lucide="sparkles" className="h-5 w-5"></i> Generate Magic</>}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Results */}
+                    <div className="px-4">
+                        {currentResults.length > 0 && <h2 className="text-lg font-bold mb-4 ml-1">Fresh Results</h2>}
+                        {currentResults.map((text, i) => (
+                            <ShayariCard key={i} text={text} language={formData.language} isFavorite={favorites.includes(text)} onToggleFavorite={toggleFavorite} />
+                        ))}
+                    </div>
+                </div>
+            );
+
+            const renderHistory = () => (
+                <div className="px-4 py-8 pb-24">
+                    <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><i data-lucide="history" className="text-indigo-600"></i> History</h2>
+                    {history.length === 0 ? <p className="text-center text-slate-400 mt-10">No history yet. Generate something!</p> : 
+                        history.map((text, i) => <ShayariCard key={i} text={text} language="detect" isFavorite={favorites.includes(text)} onToggleFavorite={toggleFavorite} />)
+                    }
+                </div>
+            );
+
+            const renderFavorites = () => (
+                <div className="px-4 py-8 pb-24">
+                    <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><i data-lucide="heart" className="text-red-500 fill-red-500"></i> Favorites</h2>
+                    {favorites.length === 0 ? <p className="text-center text-slate-400 mt-10">You haven't liked any Shayari yet.</p> : 
+                        favorites.map((text, i) => <ShayariCard key={i} text={text} language="detect" isFavorite={true} onToggleFavorite={toggleFavorite} />)
+                    }
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen bg-slate-50 max-w-md mx-auto shadow-2xl min-h-screen relative border-x border-slate-200">
+                    
+                    {/* Settings Modal */}
+                    {showSettings && (
+                        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                            <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
+                                <h3 className="text-lg font-bold mb-2">API Setup</h3>
+                                <p className="text-xs text-slate-500 mb-4">Get free key from Google AI Studio.</p>
+                                <input type="password" placeholder="Paste Gemini Key" className="w-full p-3 border rounded-xl mb-4 text-sm" value={apiKey} onChange={e => setApiKey(e.target.value)} />
+                                <div className="flex gap-2">
+                                    <button onClick={() => { localStorage.setItem('geminiKey', apiKey); setShowSettings(false); }} className="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-sm font-bold">Save</button>
+                                    <button onClick={() => setShowSettings(false)} className="flex-1 bg-slate-100 text-slate-600 py-2 rounded-lg text-sm">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Main Content Area */}
+                    {activeTab === 'home' && renderHome()}
+                    {activeTab === 'history' && renderHistory()}
+                    {activeTab === 'favorites' && renderFavorites()}
+
+                    {/* Bottom Navigation Bar */}
+                    <div className="fixed bottom-0 w-full max-w-md bg-white border-t border-slate-100 flex justify-around items-center py-3 z-50 pb-safe">
+                        <button onClick={() => setActiveTab('home')} className={`nav-item flex flex-col items-center gap-1 w-16 ${activeTab === 'home' ? 'active' : 'text-slate-400'}`}>
+                            <i data-lucide="home" className="h-6 w-6 transition-transform"></i>
+                            <span className="text-[10px] font-medium">Home</span>
+                        </button>
+                        <button onClick={() => setActiveTab('history')} className={`nav-item flex flex-col items-center gap-1 w-16 ${activeTab === 'history' ? 'active' : 'text-slate-400'}`}>
+                            <i data-lucide="history" className="h-6 w-6 transition-transform"></i>
+                            <span className="text-[10px] font-medium">History</span>
+                        </button>
+                        <button onClick={() => setActiveTab('favorites')} className={`nav-item flex flex-col items-center gap-1 w-16 ${activeTab === 'favorites' ? 'active' : 'text-slate-400'}`}>
+                            <i data-lucide="heart" className={`h-6 w-6 transition-transform ${activeTab === 'favorites' ? 'fill-indigo-600' : ''}`}></i>
+                            <span className="text-[10px] font-medium">Favorites</span>
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
